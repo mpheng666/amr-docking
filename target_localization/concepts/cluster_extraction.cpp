@@ -50,7 +50,7 @@
        std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
        break;
      }
- 
+
      // Extract the planar inliers from the input cloud
      pcl::ExtractIndices<pcl::PointXYZ> extract;
      extract.setInputCloud (cloud_filtered);

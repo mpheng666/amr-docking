@@ -35,33 +35,33 @@ int main(int argc, char** argv)
 
   // populate our PointCloud with points
   cloud->width    = 1500;
-  cloud->height   = 1;
+  cloud->height   = 5;
   cloud->is_dense = false;
   cloud->points.resize (cloud->width * cloud->height);
 //   for (pcl::index_t i = 0; i < cloud->size (); ++i)
   for (auto i = 0; i < cloud->size (); ++i)
   {
-    if (pcl::console::find_argument (argc, argv, "-s") >= 0 || pcl::console::find_argument (argc, argv, "-sf") >= 0)
+    // if (pcl::console::find_argument (argc, argv, "-s") >= 0 || pcl::console::find_argument (argc, argv, "-sf") >= 0)
+    // {
+    //   (*cloud)[i].x = 1024 * rand () / (RAND_MAX + 1.0);
+    //   (*cloud)[i].y = 1024 * rand () / (RAND_MAX + 1.0);
+    //   if (i % 5 == 0)
+    //     (*cloud)[i].z = 1024 * rand () / (RAND_MAX + 1.0);
+    //   else if(i % 2 == 0)
+    //     (*cloud)[i].z =  sqrt( 1 - ((*cloud)[i].x * (*cloud)[i].x)
+    //                                   - ((*cloud)[i].y * (*cloud)[i].y));
+    //   else
+    //     (*cloud)[i].z =  - sqrt( 1 - ((*cloud)[i].x * (*cloud)[i].x)
+    //                                     - ((*cloud)[i].y * (*cloud)[i].y));
+    // }
+    // else
     {
       (*cloud)[i].x = 1024 * rand () / (RAND_MAX + 1.0);
       (*cloud)[i].y = 1024 * rand () / (RAND_MAX + 1.0);
-      if (i % 5 == 0)
+      // if( i % 2 == 0)
         (*cloud)[i].z = 1024 * rand () / (RAND_MAX + 1.0);
-      else if(i % 2 == 0)
-        (*cloud)[i].z =  sqrt( 1 - ((*cloud)[i].x * (*cloud)[i].x)
-                                      - ((*cloud)[i].y * (*cloud)[i].y));
-      else
-        (*cloud)[i].z =  - sqrt( 1 - ((*cloud)[i].x * (*cloud)[i].x)
-                                        - ((*cloud)[i].y * (*cloud)[i].y));
-    }
-    else
-    {
-      (*cloud)[i].x = 1024 * rand () / (RAND_MAX + 1.0);
-      (*cloud)[i].y = 1024 * rand () / (RAND_MAX + 1.0);
-      if( i % 2 == 0)
-        (*cloud)[i].z = 1024 * rand () / (RAND_MAX + 1.0);
-      else
-        (*cloud)[i].z = -1 * ((*cloud)[i].x + (*cloud)[i].y);
+      // else
+      //   (*cloud)[i].z = -1 * ((*cloud)[i].x + (*cloud)[i].y);
     }
   }
 
@@ -75,14 +75,14 @@ int main(int argc, char** argv)
   if(pcl::console::find_argument (argc, argv, "-f") >= 0)
   {
     pcl::RandomSampleConsensus<pcl::PointXYZ> ransac (model_p);
-    ransac.setDistanceThreshold (.01);
+    ransac.setDistanceThreshold (.05);
     ransac.computeModel();
     ransac.getInliers(inliers);
   }
   else if (pcl::console::find_argument (argc, argv, "-sf") >= 0 )
   {
     pcl::RandomSampleConsensus<pcl::PointXYZ> ransac (model_s);
-    ransac.setDistanceThreshold (.01);
+    ransac.setDistanceThreshold (.05);
     ransac.computeModel();
     ransac.getInliers(inliers);
   }
