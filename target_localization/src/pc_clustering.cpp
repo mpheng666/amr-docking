@@ -71,9 +71,9 @@ namespace pc_clustering_ns
                 // Store seartched clusters
                 std::vector<pcl::PointIndices> cluster_indices;
                 pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-                ec.setClusterTolerance (0.02); // 2cm
+                ec.setClusterTolerance (0.05); // 2cm
                 ec.setMinClusterSize (5);
-                ec.setMaxClusterSize (2500);
+                ec.setMaxClusterSize (30);
                 ec.setSearchMethod (tree);
                 ec.setInputCloud (cloud);
                 ec.extract (cluster_indices);
