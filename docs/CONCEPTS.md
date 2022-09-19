@@ -52,3 +52,21 @@
 - This method assumes the robot is located somewhat in front of the object
 
 # More custom planner and controller
+
+# Pseudocode
+1. Receive scan data (from merger)
+2. Convert scan data to cloud (from merger)
+3. Trim cloud with passthrough filter (preprocess launch)
+4. Voxel grid filter cloud (preprocess launch)
+5. Outlier removal filter cloud (preprocess launch)
+6. Cluster cloud (target_loc cluster)
+7. Find clustered centroid (target_loc cluster)
+8. Find clustered centroid that forms a rectangle (target_loc)
+9. Find rectangle centroid (target_loc)
+10. Publish rectangle centroid with marker
+11. Choose the centroid nearest to the robot (euclidean distance)
+
+
+12. Generate a valid path from the robot to the rectangle
+13. Follow the generated path
+

@@ -1,0 +1,5 @@
+search_range: 5.0
+search_angle: 90
+
+# 0 for cage, # 1 for line, # 2 for corner
+target: 0

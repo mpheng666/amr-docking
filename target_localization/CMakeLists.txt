@@ -4,7 +4,7 @@ project(target_localization)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PCL_DIR "/usr/lib/x86_64-linux-vgnu/cmake/pcl/")
+set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl/")
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp

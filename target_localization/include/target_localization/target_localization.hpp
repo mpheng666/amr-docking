@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/LaserScan.h>
 
 namespace target_localization
 {
@@ -14,12 +15,20 @@ namespace target_localization
             TargetLocalization();
             ~TargetLocalization();
             void start();
-            VectprPC getClusters(sensor_msgs::PointCloud2);
+            VectorPC getClusters(sensor_msgs::PointCloud2);
             void runRANSAC();
             void getTargetLocation();
 
         private:
             void loadParams();
+
+            ros::Subscriber scan_sub_;
+            ros::Publisher filterd_cloud_pub_;
+            ros::Publisher clustered_cloud_pub_;
+
+            void scanCb(const sensor_msgs::LaserScan::ConstPtr& msg);
             
     };
 }
+
+#endif
