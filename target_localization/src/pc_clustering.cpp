@@ -31,7 +31,7 @@ namespace pc_clustering_ns
             PCClustering(ros::NodeHandle& nh)
             :
             nh_p_(nh),
-            cloud_sub_(nh_p_.subscribe("cloud_merged", 100, &PCClustering::CloudCb, this)),
+            cloud_sub_(nh_p_.subscribe("filtered_docking_cloud", 100, &PCClustering::CloudCb, this)),
             clustered_cloud_pub_(nh_p_.advertise<sensor_msgs::PointCloud2>("clustered_cloud", 100)),
             cluster_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>("clusters_pos", 10))
             {
@@ -97,14 +97,14 @@ namespace pc_clustering_ns
                     }
                     pcl::PointXYZ centroid_pos;
                     centroid_cluster.get(centroid_pos);
-                    std::cout << "cloud centroid: " << centroid_pos.x << "\n";
+                    ROS_INFO_STREAM("cloud centroid: " << centroid_pos.x << "\n");
                     cloud_centroids.emplace_back(centroid_pos);
                     
                     cloud_cluster->width = cloud_cluster->size ();
                     cloud_cluster->height = 1;
                     cloud_cluster->is_dense = true;
                 
-                    std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." << std::endl;
+                    ROS_INFO_STREAM("PointCloud representing the Cluster: " << cloud_cluster->size () << " data points." << 'n');
                     j++;
                 }
 
@@ -127,7 +127,6 @@ namespace pc_clustering_ns
                     point.x = centroid.x;
                     point.y = centroid.y;
                     point.z = centroid.z;
-                    // cluster_pos_marker_msg.points.emplace_back(centroid.x, centroid.y, centroid.z);
                     cluster_pos_marker_msg.points.push_back(point);
                 }
 

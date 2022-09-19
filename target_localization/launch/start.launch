@@ -3,6 +3,10 @@
 
   <arg name="enable_viz" default="false" />
 
+  <include file="$(find pointcloud-preprocess)/launch/laserscan_multi_merger.launch" />
+  
+  <include file="$(find pointcloud-preprocess)/launch/passthrough_clustering.launch" />
+
   <node pkg="target_localization" type="pcl_clustering_node" name="pcl_clustering_node" output="screen">
     <rosparam command="load" file="$(find target_localization)/config/target.yaml"/>  
   </node>

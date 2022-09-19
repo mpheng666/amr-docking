@@ -12,6 +12,5 @@
 	<param name="scan_time" value="0.0333333"/>
 	<param name="range_min" value="0.20"/>
 	<param name="range_max" value="20.0"/>
-	<remap from="/merged_cloud" to="/clustering_node/cloud_merged" />
 	</node>
 </launch>
