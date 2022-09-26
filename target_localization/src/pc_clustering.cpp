@@ -35,7 +35,9 @@ public:
           centers_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>(
                   "rec_centres", 10)),
           dock_target_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>(
-                  "dock_target", 10)) {}
+                  "dock_target", 10)),
+            perimeter_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>(
+                  "target_perimeter", 10)) {}
 
     ~PCClustering() {}
 
@@ -55,9 +57,10 @@ private:
     ros::Publisher clusters_marker_pub_;
     ros::Publisher centers_marker_pub_;
     ros::Publisher dock_target_marker_pub_;
+    ros::Publisher perimeter_marker_pub_;
 
     double cage_diagonal_ = sqrt(0.8 * 0.8 + 0.48 * 0.48);
-    double tolerance_{0.05};
+    double tolerance_{0.075};
 
     void CloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
@@ -168,47 +171,84 @@ private:
         target_marker_msg.pose.orientation.w = 1.0;
         target_marker_msg.lifetime = ros::Duration(0.5);
 
-        std::map<geometry_msgs::Point, std::pair<int, int>> centres_and_idxs;
+        // Find length that matches the target diagonal length from cloud
+        // centroid points
+        std::vector<std::pair<geometry_msgs::Point, std::pair<int, int>>> centres_and_idxs;
+
         for (auto i = 0; i < size(points); ++i) {
             for (auto j = i + 1; j < size(points); ++j) {
                 double delta_x = points.at(i).x - points.at(j).x;
                 double delta_y = points.at(i).y - points.at(j).y;
                 double distance = sqrt(delta_x * delta_x + delta_y * delta_y);
+
                 if (distance <= diagonal_len + tolerance &&
                     distance >= diagonal_len - tolerance) {
+                    std::pair<int, int> pair_points = std::make_pair(i, j);
+
                     geometry_msgs::Point line_centre;
-                    std::pair<int, int> two_points = std::make_pair(i, j);
+
                     line_centre.x = (points.at(i).x + points.at(j).x) / 2;
                     line_centre.y = (points.at(i).y + points.at(j).y) / 2;
-                    // ROS_INFO_STREAM("centre x: " << line_centre.x << " centre
-                    // y: " << line_centre.y <<'\n');
+
+                    // ROS_INFO_STREAM("centre x: " << line_centre.x << " centre y: " << line_centre.y <<'\n');
+
                     centre_marker_msg.points.push_back(line_centre);
-                    // centres_and_idxs.insert({line_centre, two_points});
+                    centres_and_idxs.emplace_back(std::make_pair(line_centre, std::make_pair(i, j)));
                 }
             }
         }
 
         centers_marker_pub_.publish(centre_marker_msg);
 
-        if (target_marker_msg.points.empty() &&
-            centre_marker_msg.points.size() >= 2) {
-            for (auto i = 0; i < size(centre_marker_msg.points); ++i) {
-                for (auto j = i; j < size(centre_marker_msg.points); ++j) {
-                    auto delta_x = centre_marker_msg.points.at(i).x -
-                                   centre_marker_msg.points.at(j).x;
-                    auto delta_y = centre_marker_msg.points.at(i).y -
-                                   centre_marker_msg.points.at(j).y;
-                    auto distance = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
-                    if (distance <= tolerance) {
-                        valid_centre = centre_marker_msg.points.at(i);
-                        target_marker_msg.pose.position = valid_centre;
-                        dock_target_marker_pub_.publish(target_marker_msg);
-                    }
-                }
+        visualization_msgs::Marker perimeter_marker_msg;
+        perimeter_marker_msg.header.frame_id = "base_link";
+        perimeter_marker_msg.ns = "perimeter";
+        perimeter_marker_msg.id = 3;
+        perimeter_marker_msg.type = visualization_msgs::Marker::LINE_STRIP;
+        perimeter_marker_msg.action = visualization_msgs::Marker::ADD;
+        perimeter_marker_msg.scale.x = 0.01;
+        perimeter_marker_msg.scale.y = 0.5;
+        perimeter_marker_msg.scale.z = 0.05;
+        perimeter_marker_msg.color.r = 1.0f;
+        perimeter_marker_msg.color.g = 1.0f;
+        perimeter_marker_msg.color.a = 0.5;
+        perimeter_marker_msg.pose.orientation.w = 1.0;
+        perimeter_marker_msg.lifetime = ros::Duration(0.5);
+
+        // Find two intersect centre points
+        for(auto i=0; i<centres_and_idxs.size(); ++i)
+        {
+           for(auto j=i; j<centres_and_idxs.size(); ++j) 
+           {
+                const double delta_x = centres_and_idxs.at(i).first.x - centres_and_idxs.at(j).first.x;
+                const double delta_y = centres_and_idxs.at(i).first.y - centres_and_idxs.at(j).first.y;
+                const auto distance = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
+
+                if (distance <= tolerance) {
+                // ROS_INFO_STREAM("Within tolerance!" << '\n');
+                geometry_msgs::Point perimeter_corner1;
+                perimeter_corner1.x = points.at(centres_and_idxs.at(i).second.first).x;
+                perimeter_corner1.y = points.at(centres_and_idxs.at(i).second.first).y;
+                perimeter_corner1.z = points.at(centres_and_idxs.at(i).second.first).z;
+                geometry_msgs::Point perimeter_corner2;
+                perimeter_corner2.x = points.at(centres_and_idxs.at(i).second.second).x;
+                perimeter_corner2.y = points.at(centres_and_idxs.at(i).second.second).y;
+                perimeter_corner2.z = points.at(centres_and_idxs.at(i).second.second).z;
+                perimeter_marker_msg.points.push_back(perimeter_corner1);
+                perimeter_marker_msg.points.push_back(perimeter_corner2);
+                target_marker_msg.pose.position = centres_and_idxs.at(i).first;
             }
+           }
         }
+        dock_target_marker_pub_.publish(target_marker_msg);
+        perimeter_marker_pub_.publish(perimeter_marker_msg);
 
         return valid_centre;
+    }
+
+    void drawTargetCrossLines(std::vector<geometry_msgs::Point>& points)
+    {
+
     }
 };
 }  // namespace pc_clustering_ns
