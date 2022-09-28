@@ -28,10 +28,11 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (pcl_clustering_node 
-  src/pc_clustering.cpp
+add_executable (target_localization_node 
+  src/target_localization.cpp
+  src/target_localization_node.cpp
 )
-target_link_libraries (pcl_clustering_node 
+target_link_libraries (target_localization_node 
   ${PCL_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${catkin_LIBRARIES}
