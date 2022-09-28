@@ -18,16 +18,29 @@ TargetLocalization::~TargetLocalization()
 
 void TargetLocalization::start()
 {
-  auto r = ros::Rate(20.0);
+  loadParams();
+  auto rate = ros::Rate(loop_rate_);
   while (ros::ok())
   {
     ros::spinOnce();
-    r.sleep();
+    rate.sleep();
   }
 }
 
 void TargetLocalization::loadParams()
 {
+  if(!nh_p_.param("cage_width", cage_width_, cage_width_))
+  {
+    ROS_WARN_STREAM("Cage width not set! Use default " << cage_width_);
+  }
+  if(!nh_p_.param("cage_length", cage_length_, cage_length_))
+  {
+    ROS_WARN_STREAM("Cage length not set! Use default " << cage_length_);
+  }
+  if(!nh_p_.param("tolerance", tolerance_, tolerance_))
+  {
+    ROS_WARN_STREAM("Tolerance not set! Use default " << tolerance_);
+  }
 }
 
 void TargetLocalization::CloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg)
@@ -198,80 +211,80 @@ std::vector<std::pair<gPoint, std::array<gPoint, 4>>> TargetLocalization::getTar
   return targets;
 }
 
-geometry_msgs::Pose TargetLocalization::getTargetPoseFromTargets(const std::vector<std::pair<gPoint, std::array<gPoint, 4>>>& targets,
-                                               const double target_width, const double target_length,
-                                               const double tolerance)
+geometry_msgs::Pose TargetLocalization::getTargetPoseFromTargets(
+    const std::vector<std::pair<gPoint, std::array<gPoint, 4>>>& targets, const double target_width,
+    const double target_length, const double tolerance)
+{
+  geometry_msgs::Pose target_pose;
+  if (targets.size())
   {
-    geometry_msgs::Pose target_pose;
-    if (targets.size())
+    visualization_msgs::Marker perimeter_marker_msg;
+    perimeter_marker_msg.header.frame_id = "base_link";
+    perimeter_marker_msg.ns = "perimeter";
+    perimeter_marker_msg.id = 3;
+    perimeter_marker_msg.type = visualization_msgs::Marker::LINE_STRIP;
+    perimeter_marker_msg.action = visualization_msgs::Marker::ADD;
+    perimeter_marker_msg.scale.x = 0.01;
+    perimeter_marker_msg.scale.y = 0.5;
+    perimeter_marker_msg.scale.z = 0.05;
+    perimeter_marker_msg.color.r = 1.0f;
+    perimeter_marker_msg.color.g = 1.0f;
+    perimeter_marker_msg.color.a = 0.5;
+    perimeter_marker_msg.pose.orientation.w = 1.0;
+    perimeter_marker_msg.lifetime = ros::Duration(0.5);
+
+    visualization_msgs::Marker target_marker_msg;
+    target_marker_msg.header.frame_id = "base_link";
+    target_marker_msg.ns = "target";
+    target_marker_msg.id = 2;
+    target_marker_msg.type = visualization_msgs::Marker::ARROW;
+    target_marker_msg.action = visualization_msgs::Marker::ADD;
+    target_marker_msg.scale.x = 0.5;
+    target_marker_msg.scale.y = 0.05;
+    target_marker_msg.scale.z = 0.05;
+    target_marker_msg.color.r = 1.0f;
+    target_marker_msg.color.g = 1.0f;
+    target_marker_msg.color.a = 1.0;
+    target_marker_msg.lifetime = ros::Duration(0.5);
+
+    // target_marker_msg.points.push_back(valid_centroids_with_middle.at(i).first);
+
+    // Use first target in targets, TODO: find nearest?
+    for (const auto& point : targets.at(0).second)
     {
-      visualization_msgs::Marker perimeter_marker_msg;
-      perimeter_marker_msg.header.frame_id = "base_link";
-      perimeter_marker_msg.ns = "perimeter";
-      perimeter_marker_msg.id = 3;
-      perimeter_marker_msg.type = visualization_msgs::Marker::LINE_STRIP;
-      perimeter_marker_msg.action = visualization_msgs::Marker::ADD;
-      perimeter_marker_msg.scale.x = 0.01;
-      perimeter_marker_msg.scale.y = 0.5;
-      perimeter_marker_msg.scale.z = 0.05;
-      perimeter_marker_msg.color.r = 1.0f;
-      perimeter_marker_msg.color.g = 1.0f;
-      perimeter_marker_msg.color.a = 0.5;
-      perimeter_marker_msg.pose.orientation.w = 1.0;
-      perimeter_marker_msg.lifetime = ros::Duration(0.5);
+      perimeter_marker_msg.points.push_back(point);
+    }
+    // Extra point to close up the rectangle
+    perimeter_marker_msg.points.push_back(targets.at(0).second.at(0));
 
-      visualization_msgs::Marker target_marker_msg;
-      target_marker_msg.header.frame_id = "base_link";
-      target_marker_msg.ns = "target";
-      target_marker_msg.id = 2;
-      target_marker_msg.type = visualization_msgs::Marker::ARROW;
-      target_marker_msg.action = visualization_msgs::Marker::ADD;
-      target_marker_msg.scale.x = 0.5;
-      target_marker_msg.scale.y = 0.05;
-      target_marker_msg.scale.z = 0.05;
-      target_marker_msg.color.r = 1.0f;
-      target_marker_msg.color.g = 1.0f;
-      target_marker_msg.color.a = 1.0;
-      target_marker_msg.lifetime = ros::Duration(0.5);
-
-      // target_marker_msg.points.push_back(valid_centroids_with_middle.at(i).first);
-
-      // Use first target in targets, TODO: find nearest?
-      for (const auto& point : targets.at(0).second)
+    // Find the orientation of the target with respect to base_link
+    for (auto i = 0; i < targets.at(0).second.size() - 1; ++i)
+    {
+      const double delta_x = targets.at(0).second.at(i).x - targets.at(0).second.at(i + 1).x;
+      const double delta_y = targets.at(0).second.at(i).y - targets.at(0).second.at(i + 1).y;
+      const auto distance = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
+      // Check if it's the length side (same orientation)
+      if (distance <= target_length + tolerance && distance >= target_length - tolerance)
       {
-        perimeter_marker_msg.points.push_back(point);
+        // Add pi to change direction
+        const double orientation_euler = atan2(delta_y, delta_x) + M_PI;
+        tf2::Quaternion target_orientation_quaternion;
+        target_orientation_quaternion.setRPY(0, 0, orientation_euler);
+        target_orientation_quaternion.normalize();
+
+        target_pose.position = targets.at(0).first;
+        target_pose.orientation = tf2::toMsg(target_orientation_quaternion);
+        break;
       }
-      // Extra point to close up the rectangle
-      perimeter_marker_msg.points.push_back(targets.at(0).second.at(0));
-
-      // Find the orientation of the target with respect to base_link
-      for (auto i = 0; i < targets.at(0).second.size() - 1; ++i)
-      {
-        const double delta_x = targets.at(0).second.at(i).x - targets.at(0).second.at(i + 1).x;
-        const double delta_y = targets.at(0).second.at(i).y - targets.at(0).second.at(i + 1).y;
-        const auto distance = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
-        // Check if it's the length side (same orientation)
-        if (distance <= target_length + tolerance && distance >= target_length - tolerance)
-        {
-          // Add pi to change direction
-          const double orientation_euler = atan2(delta_y, delta_x) + M_PI;
-          tf2::Quaternion target_orientation_quaternion;
-          target_orientation_quaternion.setRPY(0, 0, orientation_euler);
-          target_orientation_quaternion.normalize();
-
-          target_pose.position = targets.at(0).first;
-          target_pose.orientation = tf2::toMsg(target_orientation_quaternion);
-          break;
-        }
-      }
-
-      target_marker_msg.pose = target_pose;
-
-      perimeter_marker_pub_.publish(perimeter_marker_msg);
-      dock_target_marker_pub_.publish(target_marker_msg);
     }
 
-    return target_pose;
+    target_marker_msg.pose = target_pose;
+
+    perimeter_marker_pub_.publish(perimeter_marker_msg);
+    dock_target_marker_pub_.publish(target_marker_msg);
   }
+
+  return target_pose;
+}
 
 }  // namespace target_localization
