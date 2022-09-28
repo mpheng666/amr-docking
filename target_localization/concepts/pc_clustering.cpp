@@ -148,18 +148,6 @@ private:
     std::vector<std::pair<gPoint, std::pair<gPoint, gPoint>>> valid_centroids_with_middle;
     if (centroids.size())
     {
-      visualization_msgs::Marker middle_marker_msg;
-      middle_marker_msg.header.frame_id = "base_link";
-      middle_marker_msg.ns = "centre";
-      middle_marker_msg.id = 1;
-      middle_marker_msg.type = visualization_msgs::Marker::POINTS;
-      middle_marker_msg.action = visualization_msgs::Marker::ADD;
-      middle_marker_msg.scale.x = 0.1;
-      middle_marker_msg.scale.y = 0.1;
-      middle_marker_msg.color.r = 1.0f;
-      middle_marker_msg.color.a = 1.0;
-      middle_marker_msg.pose.orientation.w = 1.0;
-
       for (auto i = 0; i < size(centroids); ++i)
       {
         for (auto j = i + 1; j < size(centroids); ++j)
@@ -175,14 +163,11 @@ private:
             line_middle.x = (centroids.at(i).x + centroids.at(j).x) / 2;
             line_middle.y = (centroids.at(i).y + centroids.at(j).y) / 2;
 
-            middle_marker_msg.points.push_back(line_middle);
             valid_centroids_with_middle.emplace_back(
                 std::make_pair(line_middle, std::make_pair(centroids.at(i), centroids.at(j))));
           }
         }
       }
-
-      centers_marker_pub_.publish(middle_marker_msg);
     }
     return valid_centroids_with_middle;
   }
@@ -194,6 +179,18 @@ private:
     std::vector<std::pair<gPoint, std::array<gPoint, 4>>> targets;
     if (valid_centroids_with_middle.size())
     {
+      visualization_msgs::Marker middle_marker_msg;
+      middle_marker_msg.header.frame_id = "base_link";
+      middle_marker_msg.ns = "centre";
+      middle_marker_msg.id = 1;
+      middle_marker_msg.type = visualization_msgs::Marker::POINTS;
+      middle_marker_msg.action = visualization_msgs::Marker::ADD;
+      middle_marker_msg.scale.x = 0.1;
+      middle_marker_msg.scale.y = 0.1;
+      middle_marker_msg.color.r = 1.0f;
+      middle_marker_msg.color.a = 1.0;
+      middle_marker_msg.pose.orientation.w = 1.0;
+
       // Find two intersect middle points
       for (auto i = 0; i < valid_centroids_with_middle.size(); ++i)
       {
@@ -211,10 +208,13 @@ private:
             target_corners.at(2) = valid_centroids_with_middle.at(i).second.second;
             target_corners.at(3) = valid_centroids_with_middle.at(j).second.second;
 
+            middle_marker_msg.points.push_back(valid_centroids_with_middle.at(i).first);
+
             targets.emplace_back(std::make_pair(valid_centroids_with_middle.at(i).first, target_corners));
           }
         }
       }
+      centers_marker_pub_.publish(middle_marker_msg);
     }
 
     return targets;
