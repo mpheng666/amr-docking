@@ -17,7 +17,7 @@
 
   <node pkg="nodelet" type="nodelet" name="passthrough_y" args="load pcl/PassThrough pcl_manager_passthrough_y" output="screen">
     <remap from="~input" to="/filtered_cloud_x" />
-    <remap from="~output" to="/pcl_clustering_node/filtered_docking_cloud" />
+    <remap from="~output" to="/target_localization_node/filtered_docking_cloud" />
     <rosparam>
       filter_field_name: y
       filter_limit_min: -2.0
