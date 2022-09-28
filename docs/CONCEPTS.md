@@ -59,14 +59,34 @@
 3. Trim cloud with passthrough filter (preprocess launch)
 4. Voxel grid filter cloud (preprocess launch)
 5. Outlier removal filter cloud (preprocess launch)
-6. Cluster cloud (target_loc cluster)
-7. Find clustered centroid (target_loc cluster)
-8. Find clustered centroid that forms a rectangle (target_loc)
-9. Find rectangle centroid (target_loc)
-10. Publish rectangle centroid with marker
-11. Choose the centroid nearest to the robot (euclidean distance)
+6. Cluster cloud based on the clustering params
 
 
-12. Generate a valid path from the robot to the rectangle
-13. Follow the generated path
+7. LOOP through clustered cloud:
+   1. CALCULATE clustered centroids
+8. LOOP through clustered centroids:
+   1. CALCULATE the distance with each others
+      1. CHECK distance is diagonal+-tolerance:
+         1. CALCULATE the middle point
+         2. STORE three points into a (pointA, pointB, middlePointAB) list
+9. LOOP through (pointA, pointB, middlePointAB) list:
+   2. CHECK two middlePointAB that fall within 0+-tolerance.
+   3. STORE 4 points into (pointA1, pointB1, pointA2, pointB2)
+   4. SORT 4 points into (pointA1, pointA2, pointB1, pointB2)
+   5. CHECK IF (distance pointA1 and pointA2 is width):
+      1. CHECK IF (distance pointB1 and pointB2 is length)
+         1. IF reach here, target found
+   6. CHECK IF (distance pointA1 and pointA2 is length):
+      1. CHECK IF (distance pointB1 and pointB2 is width)
+         1. IF reach here, target found
+   7. PUBLISH target point (middlePointAB)
+
+
+
+10. Find clustered centroid that forms a rectangle (target_loc)
+11. Find rectangle centroid (target_loc)
+12. Publish rectangle centroid with marker
+13. Choose the centroid nearest to the robot (euclidean distance)
+14. Generate a valid path from the robot to the rectangle
+15. Follow the generated path
 
