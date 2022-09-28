@@ -48,8 +48,11 @@ private:
 
   double cage_width_{ 0.8 };
   double cage_length_{ 0.48 };
-  double cage_diagonal_ = sqrt(cage_width_ * cage_width_ + cage_length_ * cage_length_);
-  double tolerance_{ 0.075 };
+  double cage_diagonal_;
+  double match_tolerance_{ 0.075 };
+  double cluster_tolerance_{0.05};
+  double min_cluster_size_ {5};
+  double max_cluster_size_ {30};
 
   void loadParams();
 
@@ -67,6 +70,14 @@ private:
    * @return std::vector<pcl::PointIndices>
    */
   std::vector<pcl::PointIndices> getMatchedClustersFromCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+
+  /**
+   * @brief Get the Centroids From Matched Clusters object
+   * 
+   * @param cloud 
+   * @param cluster_indices 
+   * @return std::vector<gPoint> 
+   */
   std::vector<gPoint> getCentroidsFromMatchedClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
                                                       const std::vector<pcl::PointIndices>& cluster_indices);
 

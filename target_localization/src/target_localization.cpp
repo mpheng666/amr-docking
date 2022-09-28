@@ -29,17 +29,30 @@ void TargetLocalization::start()
 
 void TargetLocalization::loadParams()
 {
-  if(!nh_p_.param("cage_width", cage_width_, cage_width_))
+  if (!nh_p_.param("cage_width", cage_width_, cage_width_))
   {
-    ROS_WARN_STREAM("Cage width not set! Use default " << cage_width_);
+    ROS_WARN_STREAM("cage_width is not set! Use default " << cage_width_);
   }
-  if(!nh_p_.param("cage_length", cage_length_, cage_length_))
+  if (!nh_p_.param("cage_length", cage_length_, cage_length_))
   {
-    ROS_WARN_STREAM("Cage length not set! Use default " << cage_length_);
+    ROS_WARN_STREAM("cage_length is not set! Use default " << cage_length_);
   }
-  if(!nh_p_.param("tolerance", tolerance_, tolerance_))
+  cage_diagonal_ = sqrt(cage_width_ * cage_width_ + cage_length_ * cage_length_);
+  if (!nh_p_.param("match_tolerance", match_tolerance_, match_tolerance_))
   {
-    ROS_WARN_STREAM("Tolerance not set! Use default " << tolerance_);
+    ROS_WARN_STREAM("match_tolerance is not set! Use default " << match_tolerance_);
+  }
+  if (!nh_p_.param("cluster_tolerance", cluster_tolerance_, cluster_tolerance_))
+  {
+    ROS_WARN_STREAM("cluster_tolerance is not set! Use default " << cluster_tolerance_);
+  }
+  if (!nh_p_.param("min_cluster_size", min_cluster_size_, min_cluster_size_))
+  {
+    ROS_WARN_STREAM("min_cluster_size_ is not set! Use default " << min_cluster_size_);
+  }
+  if (!nh_p_.param("max_cluster_size", max_cluster_size_, max_cluster_size_))
+  {
+    ROS_WARN_STREAM("max_cluster_size_ is not set! Use default " << max_cluster_size_);
   }
 }
 
@@ -55,11 +68,12 @@ void TargetLocalization::CloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg)
 
     auto centroids = getCentroidsFromMatchedClusters(cloud, matched_clusters);
 
-    auto valid_centroids_with_middle = getValidCentroidsWithMiddleFromCentroids(centroids, cage_diagonal_, tolerance_);
+    auto valid_centroids_with_middle =
+        getValidCentroidsWithMiddleFromCentroids(centroids, cage_diagonal_, match_tolerance_);
 
-    auto targets = getTargetsFromValidCentroidsWithMiddle(valid_centroids_with_middle, tolerance_);
+    auto targets = getTargetsFromValidCentroidsWithMiddle(valid_centroids_with_middle, match_tolerance_);
 
-    auto target = getTargetPoseFromTargets(targets, cage_width_, cage_length_, tolerance_);
+    auto target = getTargetPoseFromTargets(targets, cage_width_, cage_length_, match_tolerance_);
   }
 }
 
@@ -75,9 +89,9 @@ TargetLocalization::getMatchedClustersFromCloud(const pcl::PointCloud<pcl::Point
 
     // Store searched clusters
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance(0.05);
-    ec.setMinClusterSize(5);
-    ec.setMaxClusterSize(30);
+    ec.setClusterTolerance(cluster_tolerance_);
+    ec.setMinClusterSize(min_cluster_size_);
+    ec.setMaxClusterSize(max_cluster_size_);
     ec.setSearchMethod(tree);
     ec.setInputCloud(cloud);
     ec.extract(cluster_indices);
