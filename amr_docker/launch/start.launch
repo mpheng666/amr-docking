@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <arg name="use_tf" default="false" />
+
+    <group if="$(arg use_tf)">
+        <!-- <include file="$(find amr_docker)/launch/start.launch" /> -->
+    </group>
+
+    <node pkg="amr_docker" name="amr_docker_node" type="amr_docker_node" output="screen">
+        <rosparam command="load" file="$(find amr_docker)/config/amr_docker.yaml" />
+    </node>
+
+</launch>
