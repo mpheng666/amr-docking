@@ -30,7 +30,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_executable (target_localization_node 
   src/target_localization.cpp
-  src/target_localization_node.cpp
+  node/target_localization_node.cpp
 )
 target_link_libraries (target_localization_node 
   ${PCL_LIBRARIES}

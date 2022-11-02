@@ -1,13 +1,21 @@
 search_range: 5.0
 search_angle: 90
 
-# 0 for cage, # 1 for line, # 2 for corner
+# 0 for 4-pole, # 1 for line, # 2 for corner
 target: 0
 
 # For target_mode 0
-cage_width: 0.8           # For four-legs-cage's width
-cage_length: 0.48         # For four-legs-cage's length
-match_tolerance: 0.075    # For four-legs-cage's dimension matching
+four_poles_width: 1.35           # For four_poles's width
+four_poles_length: 0.8         # For four_poles's length
+match_tolerance: 0.075    # For four_poles's dimension matching
 cluster_tolerance: 0.05   # For a leg's points clustering
-min_cluster_size: 5       # For a leg's min cluster point
-max_cluster_size: 30      # For a leg's max cluster point
+min_cluster_size: 3       # For a leg's min cluster point
+max_cluster_size: 15      # For a leg's max cluster point
+
+# # For target_mode 0
+# four_poles_width: 0.8           # For four_poles's width
+# four_poles_length: 0.48         # For four_poles's length
+# match_tolerance: 0.075    # For four_poles's dimension matching
+# cluster_tolerance: 0.05   # For a leg's points clustering
+# min_cluster_size: 5       # For a leg's min cluster point
+# max_cluster_size: 30      # For a leg's max cluster point

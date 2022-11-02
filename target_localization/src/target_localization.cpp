@@ -2,14 +2,19 @@
 
 namespace target_localization
 {
-TargetLocalization::TargetLocalization(ros::NodeHandle& nh)
-  : nh_p_(nh)
-  , cloud_sub_(nh_p_.subscribe("filtered_docking_cloud", 100, &TargetLocalization::CloudCb, this))
-  , clusters_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>("clusters_centroid_point", 10))
-  , centers_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>("targets_centre", 10))
-  , perimeter_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>("dock_target_perimeter", 10))
-  , dock_target_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>("dock_target", 10))
-{
+    TargetLocalization::TargetLocalization(ros::NodeHandle& nh)
+        : nh_p_(nh)
+        , cloud_sub_(nh_p_.subscribe<pcl::PointCloud<pcl::PointXYZ>>(
+          "filtered_docking_cloud", 100, &TargetLocalization::CloudCb, this))
+        , clusters_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>(
+          "clusters_centroid_point", 10))
+        , centers_marker_pub_(
+          nh_p_.advertise<visualization_msgs::Marker>("targets_centre", 10))
+        , perimeter_marker_pub_(nh_p_.advertise<visualization_msgs::Marker>(
+          "dock_target_perimeter", 10))
+        , dock_target_marker_pub_(
+          nh_p_.advertise<visualization_msgs::Marker>("dock_target", 10))
+    {
 }
 
 TargetLocalization::~TargetLocalization()
@@ -29,15 +34,15 @@ void TargetLocalization::start()
 
 void TargetLocalization::loadParams()
 {
-  if (!nh_p_.param("cage_width", cage_width_, cage_width_))
+  if (!nh_p_.param("four_poles_width", four_poles_width_, four_poles_width_))
   {
-    ROS_WARN_STREAM("cage_width is not set! Use default " << cage_width_);
+    ROS_WARN_STREAM("four_poles_width is not set! Use default " << four_poles_width_);
   }
-  if (!nh_p_.param("cage_length", cage_length_, cage_length_))
+  if (!nh_p_.param("four_poles_length", four_poles_length_, four_poles_length_))
   {
-    ROS_WARN_STREAM("cage_length is not set! Use default " << cage_length_);
+    ROS_WARN_STREAM("four_poles_length is not set! Use default " << four_poles_length_);
   }
-  cage_diagonal_ = sqrt(cage_width_ * cage_width_ + cage_length_ * cage_length_);
+  four_poles_diagonal_ = sqrt(four_poles_width_ * four_poles_width_ + four_poles_length_ * four_poles_length_);
   if (!nh_p_.param("match_tolerance", match_tolerance_, match_tolerance_))
   {
     ROS_WARN_STREAM("match_tolerance is not set! Use default " << match_tolerance_);
@@ -56,29 +61,29 @@ void TargetLocalization::loadParams()
   }
 }
 
-void TargetLocalization::CloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg)
+void TargetLocalization::CloudCb(
+const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
 {
-  if (msg->data.size())
+  if (msg->size())
   {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    sensor_msgs::PointCloud2 output;
-    pcl::fromROSMsg(*msg, *cloud);
+      auto matched_clusters = getMatchedClustersFromCloud(msg);
 
-    auto matched_clusters = getMatchedClustersFromCloud(cloud);
+      auto centroids = getCentroidsFromMatchedClusters(msg, matched_clusters);
 
-    auto centroids = getCentroidsFromMatchedClusters(cloud, matched_clusters);
+      auto valid_centroids_with_middle =
+      getValidCentroidsWithMiddleFromCentroids(centroids, four_poles_diagonal_,
+                                               match_tolerance_);
 
-    auto valid_centroids_with_middle =
-        getValidCentroidsWithMiddleFromCentroids(centroids, cage_diagonal_, match_tolerance_);
+      auto targets = getTargetsFromValidCentroidsWithMiddle(
+      valid_centroids_with_middle, match_tolerance_);
 
-    auto targets = getTargetsFromValidCentroidsWithMiddle(valid_centroids_with_middle, match_tolerance_);
-
-    auto target = getTargetPoseFromTargets(targets, cage_width_, cage_length_, match_tolerance_);
+      auto target = getTargetPoseFromTargets(
+      targets, four_poles_width_, four_poles_length_, match_tolerance_);
   }
 }
 
 std::vector<pcl::PointIndices>
-TargetLocalization::getMatchedClustersFromCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
+TargetLocalization::getMatchedClustersFromCloud(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud)
 {
   std::vector<pcl::PointIndices> cluster_indices;
   if (cloud->size())
@@ -99,8 +104,10 @@ TargetLocalization::getMatchedClustersFromCloud(const pcl::PointCloud<pcl::Point
   return cluster_indices;
 }
 
-std::vector<geometry_msgs::Point> TargetLocalization::getCentroidsFromMatchedClusters(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const std::vector<pcl::PointIndices>& cluster_indices)
+std::vector<geometry_msgs::Point>
+TargetLocalization::getCentroidsFromMatchedClusters(
+const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud,
+const std::vector<pcl::PointIndices>& cluster_indices)
 {
   std::vector<geometry_msgs::Point> centroids_points;
   if (cluster_indices.size())
