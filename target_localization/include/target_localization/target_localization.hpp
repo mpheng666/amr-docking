@@ -19,6 +19,7 @@
 #include "pcl_ros/point_cloud.h"
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <pcl_ros/transforms.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -42,6 +43,7 @@ namespace target_localization {
         ros::Publisher centers_marker_pub_;
         ros::Publisher dock_target_marker_pub_;
         ros::Publisher perimeter_marker_pub_;
+        ros::Publisher dock_target_pose_pub_;
 
         static constexpr double loop_rate_{20.0};
 

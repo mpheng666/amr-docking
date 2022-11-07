@@ -7,6 +7,7 @@ set (CMAKE_SHARED_LINKER_FLAGS "-static-libstdc++")
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  tf2_ros
   dynamic_reconfigure
 )
 

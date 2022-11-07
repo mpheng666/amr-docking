@@ -14,6 +14,8 @@ namespace target_localization
           "dock_target_perimeter", 10))
         , dock_target_marker_pub_(
           nh_p_.advertise<visualization_msgs::Marker>("dock_target", 10))
+        , dock_target_pose_pub_(
+          nh_p_.advertise<geometry_msgs::PoseStamped>("dock_target_pose", 10))
     {
 }
 
@@ -254,21 +256,24 @@ geometry_msgs::Pose TargetLocalization::getTargetPoseFromTargets(
     perimeter_marker_msg.pose.orientation.w = 1.0;
     perimeter_marker_msg.lifetime = ros::Duration(0.5);
 
-    visualization_msgs::Marker target_marker_msg;
-    target_marker_msg.header.frame_id = "base_link";
-    target_marker_msg.ns = "target";
-    target_marker_msg.id = 2;
-    target_marker_msg.type = visualization_msgs::Marker::ARROW;
-    target_marker_msg.action = visualization_msgs::Marker::ADD;
-    target_marker_msg.scale.x = 0.5;
-    target_marker_msg.scale.y = 0.05;
-    target_marker_msg.scale.z = 0.05;
-    target_marker_msg.color.r = 1.0f;
-    target_marker_msg.color.g = 1.0f;
-    target_marker_msg.color.a = 1.0;
-    target_marker_msg.lifetime = ros::Duration(0.5);
+    visualization_msgs::Marker target_viz_marker_msg;
+    target_viz_marker_msg.header.frame_id = "base_link";
+    target_viz_marker_msg.ns = "target";
+    target_viz_marker_msg.id = 2;
+    target_viz_marker_msg.type = visualization_msgs::Marker::ARROW;
+    target_viz_marker_msg.action = visualization_msgs::Marker::ADD;
+    target_viz_marker_msg.scale.x = 0.5;
+    target_viz_marker_msg.scale.y = 0.05;
+    target_viz_marker_msg.scale.z = 0.05;
+    target_viz_marker_msg.color.r = 1.0f;
+    target_viz_marker_msg.color.g = 1.0f;
+    target_viz_marker_msg.color.a = 1.0;
+    target_viz_marker_msg.lifetime = ros::Duration(0.5);
 
-    // target_marker_msg.points.push_back(valid_centroids_with_middle.at(i).first);
+    geometry_msgs::PoseStamped dock_target_pose_msg;
+    dock_target_pose_msg.header.frame_id = "base_link";
+
+    // target_viz_marker_msg.points.push_back(valid_centroids_with_middle.at(i).first);
 
     // Use first target in targets, TODO: find nearest?
     for (const auto& point : targets.at(0).second)
@@ -288,21 +293,26 @@ geometry_msgs::Pose TargetLocalization::getTargetPoseFromTargets(
       if (distance <= target_length + tolerance && distance >= target_length - tolerance)
       {
         // Add pi to change direction
-        const double orientation_euler = atan2(delta_y, delta_x) + M_PI;
+        const double orientation_euler = atan(delta_y/ delta_x);
         tf2::Quaternion target_orientation_quaternion;
         target_orientation_quaternion.setRPY(0, 0, orientation_euler);
         target_orientation_quaternion.normalize();
 
         target_pose.position = targets.at(0).first;
         target_pose.orientation = tf2::toMsg(target_orientation_quaternion);
+
+        dock_target_pose_msg.pose = target_pose;
+
         break;
       }
     }
 
-    target_marker_msg.pose = target_pose;
+    // Publish pose for docking
+    target_viz_marker_msg.pose = target_pose;
 
     perimeter_marker_pub_.publish(perimeter_marker_msg);
-    dock_target_marker_pub_.publish(target_marker_msg);
+    dock_target_marker_pub_.publish(target_viz_marker_msg);
+    dock_target_pose_pub_.publish(dock_target_pose_msg);
   }
 
   return target_pose;

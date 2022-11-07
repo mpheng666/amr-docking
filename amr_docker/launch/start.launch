@@ -9,6 +9,8 @@
 
     <node pkg="amr_docker" name="amr_docker_node" type="amr_docker_node" output="screen">
         <rosparam command="load" file="$(find amr_docker)/config/amr_docker.yaml" />
+        <remap from="target_pose_input" to="target_localization_node/dock_target_pose" />
+        <remap from="amr_docker_node/twist_output" to="nexmov_velocity_controller/cmd_vel" />
     </node>
 
 </launch>
