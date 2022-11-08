@@ -11,6 +11,8 @@
 #include <tf/transform_listener.h>
 
 #include <std_srvs/Trigger.h>
+#include <chrono>
+#include <thread>
 
 namespace amr_docker
 {
@@ -34,6 +36,7 @@ namespace amr_docker
         ros::Timer pub_timer_;
 
         ros::ServiceServer dock_service_;
+        ros::ServiceServer undock_service_;
 
         geometry_msgs::TransformStamped tfstamped_base_target_;
         geometry_msgs::Twist dock_cmd_vel_;
@@ -41,13 +44,22 @@ namespace amr_docker
 
         bool start_dock_{false};
 
-        void loadParams();
+        double dock_linear_gain_{0.3};
+        double dock_angular_gain_{2.0};
+
+        // geometry_msgs::PoseStamped dock_pose_;
+
+        void
+        loadParams();
         void targetPoseInputCallBack(
         const geometry_msgs::PoseStamped::ConstPtr& msg);
         void timerPubCallBack(const ros::TimerEvent& e);
         Delta blindDock(const geometry_msgs::PoseStamped::ConstPtr& msg);
+        bool blindUndock(const geometry_msgs::Twist& command, const int period_in_ms);
         void deltaToTwist(const Delta& delta);
         bool startDock(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+        bool startUnDock(std_srvs::Trigger::Request& req,
+                         std_srvs::Trigger::Response& res);
     };
 }
 
